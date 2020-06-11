@@ -67,7 +67,6 @@ pub fn set_verbosity(verbosity: u8) -> Result<(), EdgeTPUError> {
     }
 }
 
-#[link(name = "edgetpu")]
 extern "C" {
     fn edgetpu_version() -> *const std::os::raw::c_char;
 }

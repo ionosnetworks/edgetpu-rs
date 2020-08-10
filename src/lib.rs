@@ -104,6 +104,22 @@ mod tests {
     }
 
     #[test]
+    fn test_enumerate() {
+        let devices = super::EdgeTpuContext::enumerate_devices();
+        println!("{} TPU Devices", devices.len());
+        for device in devices {
+            println!(
+                "\t{}: {}",
+                device.path,
+                match device.device_type {
+                    super::DeviceType::ApexPCI => "PCI",
+                    super::DeviceType::ApexUSB => "USB",
+                }
+            );
+        }
+    }
+
+    #[test]
     fn test_options() {
         let options: std::collections::HashMap<String, String> = [
             ("Performance", "Low"),

@@ -10,9 +10,16 @@ cpp! {{
     #include "edgetpu.h"
 }}
 
+#[derive(PartialEq, Copy, Clone)]
 pub enum DeviceType {
     ApexPCI,
     ApexUSB,
+}
+
+#[derive(PartialEq, Clone)]
+pub struct DeviceRecord {
+    pub device_type: DeviceType,
+    pub path: String,
 }
 
 cpp_class!(unsafe struct InnerEdgeTpuContext as "std::shared_ptr<edgetpu::EdgeTpuContext>");
@@ -25,6 +32,40 @@ pub struct EdgeTpuContext {
 }
 
 impl EdgeTpuContext {
+    pub fn enumerate_devices() -> Vec<DeviceRecord> {
+        let mut devices = Vec::new();
+        let devices_ptr = &mut devices;
+
+        cpp!(unsafe [devices_ptr as "void *"] {
+          const auto& available_tpus = edgetpu::EdgeTpuManager::GetSingleton()->EnumerateEdgeTpu();
+          for (auto& device : available_tpus) {
+              char* path = new char[device.path.length()+1];
+              strcpy(path, device.path.c_str());
+              char device_type;
+              if (device.type == edgetpu::DeviceType::kApexPci) {
+                  device_type = 0;
+              } else if (device.type == edgetpu::DeviceType::kApexUsb) {
+                  device_type = 1;
+              }
+
+              rust!(enumerate_devices_cb [devices_ptr: *mut Vec<DeviceRecord> as "void *", path: *mut std::os::raw::c_char as "const char *", device_type: u8 as "char"] {
+                  let path = std::ffi::CString::from_raw(path);
+                  let device_type = match device_type {
+                      0 => DeviceType::ApexPCI,
+                      1 => DeviceType::ApexUSB,
+                      _ => panic!("unresolved device type"),
+                  };
+                  devices_ptr.as_mut().unwrap().push(DeviceRecord{
+                      device_type,
+                      path: path.to_string_lossy().into(),
+                  });
+              });
+          }
+        });
+
+        devices
+    }
+
     pub fn open_device() -> Result<Self, EdgeTPUError> {
         let inner = cpp!(unsafe [] -> InnerEdgeTpuContext as "std::shared_ptr<edgetpu::EdgeTpuContext>" {
           return edgetpu::EdgeTpuManager::GetSingleton()->OpenDevice();

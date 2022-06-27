@@ -7,7 +7,15 @@ This library is a rust binding for the C++ [Edge TPU](https://github.com/google-
 ## Requirements
 
 Ensure that you have the libedge tpu library and headers installed on your system. On Linux (Debian),
-this means installed both the `libedgetpu1-std` and `libedgetpu-dev` libraries.
+this means installed both the `libedgetpu1-std` and `libedgetpu-dev` libraries. These libraries are
+already included on Coral boards with Mendel installed, but for other Debian systems follow the 
+[Debian Packages](https://coral.ai/software/#debian-packages) guide to install these libraries.
+
+Additionally, a valid installation of libclang is required, which can be installed on Debian systems with:
+```
+sudo apt-get update
+sudo apt-get install clang -y
+```
 
 ## Usage
 
